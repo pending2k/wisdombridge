@@ -1,0 +1,101 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Core user profile data",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["mentor", "mentee", "admin"] },
+        "country": { "type": "string" },
+        "language": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "email", "role"]
+    },
+    "MentorProfile": {
+      "title": "Mentor Profile",
+      "description": "Detailed mentor profile information",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "domains": { "type": "array", "items": { "type": "string" } },
+        "experience": { "type": "string" },
+        "price": { "type": "number" },
+        "currency": { "type": "string" },
+        "languages": { "type": "array", "items": { "type": "string" } },
+        "rating": { "type": "number" },
+        "reviewCount": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "inactive", "pending"] },
+        "maxMentees": { "type": "number" },
+        "activeMentees": { "type": "number" }
+      },
+      "required": ["userId", "title", "description", "price", "status"]
+    },
+    "MenteeProfile": {
+      "title": "Mentee Profile",
+      "description": "Mentee goals and preferences",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "goals": { "type": "string" },
+        "level": { "type": "string" },
+        "preferences": { "type": "string" }
+      },
+      "required": ["userId"]
+    },
+    "Session": {
+      "title": "Session",
+      "description": "A 1-on-1 mentoring session",
+      "type": "object",
+      "properties": {
+        "mentorId": { "type": "string" },
+        "menteeId": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "duration": { "type": "number" },
+        "status": { "type": "string", "enum": ["requested", "accepted", "rejected", "completed", "cancelled"] },
+        "videoLink": { "type": "string" },
+        "notes": { "type": "string" },
+        "objective": { "type": "string" }
+      },
+      "required": ["mentorId", "menteeId", "date", "status"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Mentee review of a mentor after a session",
+      "type": "object",
+      "properties": {
+        "sessionId": { "type": "string" },
+        "mentorId": { "type": "string" },
+        "menteeId": { "type": "string" },
+        "rating": { "type": "number" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sessionId", "mentorId", "menteeId", "rating"]
+    },
+    "Availability": {
+      "title": "Availability",
+      "description": "Mentor's available time slots",
+      "type": "object",
+      "properties": {
+        "mentorId": { "type": "string" },
+        "slots": { "type": "array", "items": { "type": "object" } },
+        "timezone": { "type": "string" }
+      },
+      "required": ["mentorId", "slots"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": { "schema": "User", "description": "User profiles" },
+    "/mentorProfiles/{userId}": { "schema": "MentorProfile", "description": "Mentor-specific details" },
+    "/menteeProfiles/{userId}": { "schema": "MenteeProfile", "description": "Mentee-specific details" },
+    "/sessions/{sessionId}": { "schema": "Session", "description": "Mentoring sessions" },
+    "/reviews/{reviewId}": { "schema": "Review", "description": "Session reviews" },
+    "/availability/{mentorId}": { "schema": "Availability", "description": "Mentor availability" }
+  }
+}

@@ -1,0 +1,81 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "s.marius2k@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    // ===============================================================
+    // Validators
+    // ===============================================================
+    function isValidUser(data) {
+      return data.keys().hasAll(['name', 'email', 'role']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.email is string && data.role in ['mentor', 'mentee', 'admin'];
+    }
+
+    function isValidMentorProfile(data) {
+      return data.keys().hasAll(['userId', 'title', 'description', 'price', 'status']) &&
+             data.userId is string && data.title is string && data.price is number &&
+             data.status in ['active', 'inactive', 'pending'];
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && 
+                      request.resource.data.role == resource.data.role || isAdmin();
+    }
+
+    match /mentorProfiles/{userId} {
+      allow read: if true;
+      allow create: if isOwner(userId) && isValidMentorProfile(request.resource.data);
+      allow update: if (isOwner(userId) && isValidMentorProfile(request.resource.data)) || isAdmin();
+    }
+
+    match /menteeProfiles/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+    }
+
+    match /sessions/{sessionId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.mentorId || 
+        request.auth.uid == resource.data.menteeId || 
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.menteeId;
+      allow update: if isAuthenticated() && (
+        request.auth.uid == resource.data.mentorId || 
+        request.auth.uid == resource.data.menteeId || 
+        isAdmin()
+      );
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.menteeId;
+      allow update: if isAdmin();
+    }
+
+    match /availability/{mentorId} {
+      allow read: if true;
+      allow create, update: if isOwner(mentorId);
+    }
+  }
+}
